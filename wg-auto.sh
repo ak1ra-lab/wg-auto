@@ -25,7 +25,7 @@ define_variables() {
 	# Define Variables
 	printf "Defining variables... "
 	export endpoint="my-ddns.example.com"
-	export interface="wg_lan"
+	export interface="wg0"
 	export interface_ipcidr_prefix="10.0.16"
 	export server_port="51816"
 	export server_firewall_zone="lan"

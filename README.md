@@ -2,7 +2,7 @@
 
 Automated shell script to setup WireGuard on OpenWRT
 
-This script creates 4 peers with usernames 'alpha', 'bravo', 'charlie', and 'delta' on a `lan` network with WireGuard interface `wg_lan` by default. The only changes you need to make are in the `define_variables` function.
+This script creates 4 peers with usernames 'alpha', 'bravo', 'charlie', and 'delta' on a `lan` network with WireGuard interface `wg0` by default. The only changes you need to make are in the `define_variables` function.
 
 This script will keep pre-existing peer keys when you re-run this script, if this is not what your need, just delete the peer keys in `/etc/wireguard/config/${path_prefix}/peers` directory.
 
