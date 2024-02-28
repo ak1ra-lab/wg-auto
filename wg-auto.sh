@@ -12,6 +12,7 @@ require_command() {
 }
 
 splash_screen() {
+	command -v uci >/dev/null || return
 	cat <<-EOF
 		======================================
 		|      Automated shell script        |
@@ -52,6 +53,7 @@ create_dirs() {
 }
 
 rename_firewall_zone() {
+	command -v uci >/dev/null || return
 	printf "Rename firewall.@zone[0] to lan and firewall.@zone[1] to wan... "
 	uci rename firewall.@zone[0]="lan"
 	uci rename firewall.@zone[1]="wan"
@@ -59,6 +61,7 @@ rename_firewall_zone() {
 }
 
 remove_existing_interface() {
+	command -v uci >/dev/null || return
 	# Remove pre-existing WireGuard interface
 	printf "Removing pre-existing WireGuard interface... "
 	uci del_list firewall.${server_firewall_zone}.network="${interface}"
@@ -67,6 +70,7 @@ remove_existing_interface() {
 }
 
 remove_existing_peers() {
+	command -v uci >/dev/null || return
 	# Remove existing peers
 	printf "Removing pre-existing peers... "
 	while uci -q delete network.@wireguard_${interface}[0]; do :; done
@@ -76,6 +80,7 @@ remove_existing_peers() {
 }
 
 remove_firewall_rule() {
+	command -v uci >/dev/null || return
 	# Remove pre-existing WireGuard firewall rules
 	printf "Removing pre-existing WireGuard firewall rules... "
 	uci del firewall.${interface}
@@ -96,6 +101,7 @@ generate_server_keys() {
 }
 
 create_interface() {
+	command -v uci >/dev/null || return
 	# Create WireGuard interface for 'interface' network
 	printf "Creating WireGuard interface for '%s' network... " "${interface}"
 	uci set network.${interface}=interface
@@ -137,6 +143,7 @@ create_server_config() {
 }
 
 add_firewall_rule() {
+	command -v uci >/dev/null || return
 	# Add firewall rule
 	printf "Adding firewall rule for '%s' network... " "${interface}"
 	uci set firewall.${interface}="rule"
@@ -178,6 +185,7 @@ generate_peer_keys() {
 }
 
 add_peer_to_server() {
+	command -v uci >/dev/null || return
 	# Add peer to server
 	printf "Adding '%s' to WireGuard server... " "${peer}"
 	uci add network wireguard_${interface}
@@ -235,6 +243,7 @@ loop_peers() {
 }
 
 commit_changes() {
+	command -v uci >/dev/null || return
 	# Commit UCI changes
 	printf "\nCommiting changes... "
 	uci commit
@@ -242,6 +251,7 @@ commit_changes() {
 }
 
 restart_service() {
+	command -v uci >/dev/null || return
 	# Restart WireGuard interface
 	printf "\nRestarting WireGuard interface... "
 	ifup ${interface}
@@ -254,7 +264,7 @@ restart_service() {
 }
 
 main() {
-	require_command uci wg
+	require_command wg
 
 	umask 077
 	splash_screen
