@@ -26,10 +26,11 @@ define_variables() {
 	printf "Defining variables... "
 	export endpoint="my-ddns.example.com"
 	export interface="wg0"
-	export interface_ipcidr_prefix="10.0.16"
-	export server_port="51816"
-	export server_firewall_zone="lan"
+	export interface_ipcidr_prefix="10.0.20"
+	export server_port="51820"
 	export server_IP="${interface_ipcidr_prefix}.1"
+	export firewall_zone="${interface}_zone"
+	export firewall_rule="${interface}_rule"
 	# `AllowedIPs = 0.0.0.0/0` will route all traffic via WireGuard interface on peers,
 	# If this is not what you need, update with your local network IP CIDR
 	export server_allowed_ips="0.0.0.0/0"
@@ -37,7 +38,7 @@ define_variables() {
 	# The IP address to start from
 	export peer_IP="2"
 	# Use your device prefix to meet your need
-	export path_prefix="ax6s_${interface}"
+	export path_prefix="${interface}"
 	export config_dir="/etc/wireguard/config/${path_prefix}"
 	export peers_dir="${config_dir}/peers"
 	# Modify `usernames` with more or less usernames to create any number of peers
@@ -52,26 +53,15 @@ create_dirs() {
 	printf "Done\n"
 }
 
-rename_firewall_zone() {
-	command -v uci >/dev/null || return
-	printf "Rename firewall.@zone[0] to lan and firewall.@zone[1] to wan... "
-	uci rename firewall.@zone[0]="lan"
-	uci rename firewall.@zone[1]="wan"
-	printf "Done\n"
-}
-
 remove_existing_interface() {
 	command -v uci >/dev/null || return
-	# Remove pre-existing WireGuard interface
 	printf "Removing pre-existing WireGuard interface... "
-	uci del_list firewall.${server_firewall_zone}.network="${interface}"
 	uci del network.${interface}
 	printf "Done\n"
 }
 
 remove_existing_peers() {
 	command -v uci >/dev/null || return
-	# Remove existing peers
 	printf "Removing pre-existing peers... "
 	while uci -q delete network.@wireguard_${interface}[0]; do :; done
 	# Keep pre-existing peer keys
@@ -79,11 +69,17 @@ remove_existing_peers() {
 	printf "Done\n"
 }
 
+remove_firewall_zone() {
+	command -v uci >/dev/null || return
+	printf "Removing pre-existing WireGuard firewall zone... "
+	uci del firewall.${firewall_zone}
+	printf "Done\n"
+}
+
 remove_firewall_rule() {
 	command -v uci >/dev/null || return
-	# Remove pre-existing WireGuard firewall rules
-	printf "Removing pre-existing WireGuard firewall rules... "
-	uci del firewall.${interface}
+	printf "Removing pre-existing WireGuard firewall rule... "
+	uci del firewall.${firewall_rule}
 	printf "Done\n"
 }
 
@@ -94,25 +90,21 @@ generate_server_keys() {
 		umask 077
 		wg genkey |
 			tee "${config_dir}/${interface}.key" |
-			wg pubkey |
-			tee "${config_dir}/${interface}.pub"
+			wg pubkey >"${config_dir}/${interface}.pub"
 	}
 	printf "Done\n"
 }
 
 create_interface() {
 	command -v uci >/dev/null || return
-	# Create WireGuard interface for 'interface' network
+	# Create WireGuard interface
 	printf "Creating WireGuard interface for '%s' network... " "${interface}"
-	uci set network.${interface}=interface
-	uci set network.${interface}.proto='wireguard'
+	uci set network.${interface}="interface"
+	uci set network.${interface}.proto="wireguard"
 	uci set network.${interface}.private_key="$(cat ${config_dir}/${interface}.key)"
 	uci set network.${interface}.listen_port="${server_port}"
 	uci set network.${interface}.mtu='1420'
 	uci add_list network.${interface}.addresses="${server_IP}/24"
-
-	# Add '${interface}' to '${server_firewall_zone}' firewall zone
-	uci add_list firewall.${server_firewall_zone}.network="${interface}"
 	printf "Done\n"
 }
 
@@ -142,16 +134,31 @@ create_server_config() {
 	printf "Done\n"
 }
 
+create_firewall_zone() {
+	command -v uci >/dev/null || return
+	# Create firewall zone
+	printf "Create firewall zone for '%s' interface... " "${interface}"
+	uci set firewall.${firewall_zone}="zone"
+	uci set firewall.${firewall_zone}.name="${firewall_zone}"
+	uci set firewall.${firewall_zone}.input="ACCEPT"
+	uci set firewall.${firewall_zone}.output="ACCEPT"
+	uci set firewall.${firewall_zone}.forward="ACCEPT"
+	uci set firewall.${firewall_zone}.masq="1"
+	uci add_list firewall.${firewall_zone}.network="lan"
+	uci add_list firewall.${firewall_zone}.network="${interface}"
+	printf "Done\n"
+}
+
 add_firewall_rule() {
 	command -v uci >/dev/null || return
 	# Add firewall rule
-	printf "Adding firewall rule for '%s' network... " "${interface}"
-	uci set firewall.${interface}="rule"
-	uci set firewall.${interface}.name="Allow-WireGuard-${interface}"
-	uci set firewall.${interface}.src="wan"
-	uci set firewall.${interface}.dest_port="${server_port}"
-	uci set firewall.${interface}.proto="udp"
-	uci set firewall.${interface}.target="ACCEPT"
+	printf "Adding firewall rule for '%s' interface... " "${interface}"
+	uci set firewall.${firewall_rule}="rule"
+	uci set firewall.${firewall_rule}.name="${firewall_rule}"
+	uci set firewall.${firewall_rule}.src="wan"
+	uci set firewall.${firewall_rule}.dest_port="${server_port}"
+	uci set firewall.${firewall_rule}.proto="udp"
+	uci set firewall.${firewall_rule}.target="ACCEPT"
 	printf "Done\n"
 }
 
@@ -169,8 +176,7 @@ generate_peer_keys() {
 		umask 077
 		wg genkey |
 			tee "${peers_dir}/${peer}/${peer}.key" |
-			wg pubkey |
-			tee "${peers_dir}/${peer}/${peer}.pub"
+			wg pubkey >"${peers_dir}/${peer}/${peer}.pub"
 	}
 	printf "Done\n"
 
@@ -178,8 +184,7 @@ generate_peer_keys() {
 	printf "Generating peer PSK for '%s'... " "${peer}"
 	test -f "${peers_dir}/${peer}/${peer}.psk" || {
 		umask 077
-		wg genpsk |
-			tee "${peers_dir}/${peer}/${peer}.psk"
+		wg genpsk >"${peers_dir}/${peer}/${peer}.psk"
 	}
 	printf "Done\n"
 }
@@ -187,14 +192,14 @@ generate_peer_keys() {
 add_peer_to_server() {
 	command -v uci >/dev/null || return
 	# Add peer to server
-	printf "Adding '%s' to WireGuard server... " "${peer}"
-	uci add network wireguard_${interface}
-	uci set network.@wireguard_${interface}[-1].public_key="$(cat "${peers_dir}/${peer}/${peer}.pub")"
-	uci set network.@wireguard_${interface}[-1].preshared_key="$(cat "${peers_dir}/${peer}/${peer}.psk")"
-	uci set network.@wireguard_${interface}[-1].description="${peer}"
-	uci add_list network.@wireguard_${interface}[-1].allowed_ips="${interface_ipcidr_prefix}.${peer_IP}/32"
-	uci set network.@wireguard_${interface}[-1].route_allowed_ips='1'
-	uci set network.@wireguard_${interface}[-1].persistent_keepalive='25'
+	printf "Adding '%s' to WireGuard '%s' interface... " "${peer}" "${interface}"
+	uci set network.${peer}="wireguard_${interface}"
+	uci set network.${peer}.public_key="$(cat "${peers_dir}/${peer}/${peer}.pub")"
+	uci set network.${peer}.preshared_key="$(cat "${peers_dir}/${peer}/${peer}.psk")"
+	uci set network.${peer}.description="${peer}"
+	uci set network.${peer}.route_allowed_ips='1'
+	uci set network.${peer}.persistent_keepalive='25'
+	uci add_list network.${peer}.allowed_ips="${interface_ipcidr_prefix}.${peer_IP}/32"
 	printf "Done\n"
 }
 
@@ -271,14 +276,15 @@ main() {
 
 	define_variables
 	create_dirs
-	rename_firewall_zone
 
 	remove_existing_interface
 	remove_existing_peers
+	remove_firewall_zone
 	remove_firewall_rule
 
 	generate_server_keys
 	create_interface
+	create_firewall_zone
 	add_firewall_rule
 	create_server_config
 
