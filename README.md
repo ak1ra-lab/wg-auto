@@ -18,7 +18,6 @@ This script will keep pre-existing peer keys when you re-run this script, if thi
 * Modify `usernames` with more or less usernames to create any number of peers
 * `path_prefix` is optional, this variable only affects file path for peers config, use your device prefix to meet your need
 * The `create_server_config` and `append_peer_to_server_config` functions are used to create equivalent standard server configurations for other purposes, these function has no effect on OpenWRT setup.
-    * You might need to update `lan_interface` and `wan_interface` and related `iptables` rules in `create_server_config` function.
 
 ## Reference
 

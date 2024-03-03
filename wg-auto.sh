@@ -111,24 +111,20 @@ create_interface() {
 create_server_config() {
 	# Create equivalent standard server configuration
 	printf "Creating server config for '%s'... " "${interface}"
-	# Make your changes here to meet your requirements
-	lan_interface="eth0"
-	wan_interface="eth1"
+	fwmark=$(printf "0x%x" "${server_port}")
 	cat <<-EOF >"${config_dir}/${interface}.conf"
 		[Interface]
 		Address = ${server_IP}/24
 		ListenPort = ${server_port}
 		PrivateKey = $(cat "${config_dir}/${interface}.key") # server's private key
 
-		PostUp = iptables -A FORWARD -i %i -j ACCEPT
-		# outbound packets via lan interface
-		PostUp = iptables -t nat -A POSTROUTING -o ${lan_interface} -j MASQUERADE
-		# outbound packets via wan interface
-		PostUp = iptables -t nat -A POSTROUTING -o ${wan_interface} -j MASQUERADE
+		PostUp = iptables -t filter -A FORWARD -i %i -j ACCEPT
+		PostUp = iptables -t mangle -A PREROUTING -i %i -j MARK --set-xmark ${fwmark}
+		PostUp = iptables -t nat -A POSTROUTING -m mark --mark ${fwmark} -j MASQUERADE
 
-		PreDown = iptables -D FORWARD -i %i -j ACCEPT
-		PreDown = iptables -t nat -D POSTROUTING -o ${lan_interface} -j MASQUERADE
-		PreDown = iptables -t nat -D POSTROUTING -o ${wan_interface} -j MASQUERADE
+		PreDown = iptables -t filter -D FORWARD -i %i -j ACCEPT
+		PreDown = iptables -t mangle -D PREROUTING -i %i -j MARK --set-xmark ${fwmark}
+		PreDown = iptables -t nat -D POSTROUTING -m mark --mark ${fwmark} -j MASQUERADE
 
 	EOF
 	printf "Done\n"
