@@ -99,12 +99,12 @@ create_interface() {
 	command -v uci >/dev/null || return
 	# Create WireGuard interface
 	printf "Creating WireGuard interface for '%s' network... " "${interface}"
-	uci set network.${interface}="interface"
-	uci set network.${interface}.proto="wireguard"
-	uci set network.${interface}.private_key="$(cat ${config_dir}/${interface}.key)"
-	uci set network.${interface}.listen_port="${server_port}"
-	uci set network.${interface}.mtu='1420'
-	uci add_list network.${interface}.addresses="${server_IP}/24"
+	uci set "network.${interface}=interface"
+	uci set "network.${interface}.proto=wireguard"
+	uci set "network.${interface}.private_key=$(cat "${config_dir}/${interface}.key")"
+	uci set "network.${interface}.listen_port=${server_port}"
+	uci set "network.${interface}.mtu=1420"
+	uci add_list "network.${interface}.addresses=${server_IP}/24"
 	printf "Done\n"
 }
 
@@ -138,14 +138,14 @@ create_firewall_zone() {
 	command -v uci >/dev/null || return
 	# Create firewall zone
 	printf "Create firewall zone for '%s' interface... " "${interface}"
-	uci set firewall.${firewall_zone}="zone"
-	uci set firewall.${firewall_zone}.name="${firewall_zone}"
-	uci set firewall.${firewall_zone}.input="ACCEPT"
-	uci set firewall.${firewall_zone}.output="ACCEPT"
-	uci set firewall.${firewall_zone}.forward="ACCEPT"
-	uci set firewall.${firewall_zone}.masq="1"
-	uci add_list firewall.${firewall_zone}.network="lan"
-	uci add_list firewall.${firewall_zone}.network="${interface}"
+	uci set "firewall.${firewall_zone}=zone"
+	uci set "firewall.${firewall_zone}.name=${firewall_zone}"
+	uci set "firewall.${firewall_zone}.input=ACCEPT"
+	uci set "firewall.${firewall_zone}.output=ACCEPT"
+	uci set "firewall.${firewall_zone}.forward=ACCEPT"
+	uci set "firewall.${firewall_zone}.masq=1"
+	uci add_list "firewall.${firewall_zone}.network=lan"
+	uci add_list "firewall.${firewall_zone}.network=${interface}"
 	printf "Done\n"
 }
 
@@ -153,12 +153,12 @@ add_firewall_rule() {
 	command -v uci >/dev/null || return
 	# Add firewall rule
 	printf "Adding firewall rule for '%s' interface... " "${interface}"
-	uci set firewall.${firewall_rule}="rule"
-	uci set firewall.${firewall_rule}.name="${firewall_rule}"
-	uci set firewall.${firewall_rule}.src="wan"
-	uci set firewall.${firewall_rule}.dest_port="${server_port}"
-	uci set firewall.${firewall_rule}.proto="udp"
-	uci set firewall.${firewall_rule}.target="ACCEPT"
+	uci set "firewall.${firewall_rule}=rule"
+	uci set "firewall.${firewall_rule}.name=${firewall_rule}"
+	uci set "firewall.${firewall_rule}.src=wan"
+	uci set "firewall.${firewall_rule}.dest_port=${server_port}"
+	uci set "firewall.${firewall_rule}.proto=udp"
+	uci set "firewall.${firewall_rule}.target=ACCEPT"
 	printf "Done\n"
 }
 
@@ -193,13 +193,13 @@ add_peer_to_server() {
 	command -v uci >/dev/null || return
 	# Add peer to server
 	printf "Adding '%s' to WireGuard '%s' interface... " "${peer}" "${interface}"
-	uci set network.${peer}="wireguard_${interface}"
-	uci set network.${peer}.public_key="$(cat "${peers_dir}/${peer}/${peer}.pub")"
-	uci set network.${peer}.preshared_key="$(cat "${peers_dir}/${peer}/${peer}.psk")"
-	uci set network.${peer}.description="${peer}"
-	uci set network.${peer}.route_allowed_ips='1'
-	uci set network.${peer}.persistent_keepalive='25'
-	uci add_list network.${peer}.allowed_ips="${interface_ipcidr_prefix}.${peer_IP}/32"
+	uci set "network.${peer}=wireguard_${interface}"
+	uci set "network.${peer}.public_key=$(cat "${peers_dir}/${peer}/${peer}.pub")"
+	uci set "network.${peer}.preshared_key=$(cat "${peers_dir}/${peer}/${peer}.psk")"
+	uci set "network.${peer}.description=${peer}"
+	uci set "network.${peer}.route_allowed_ips=1"
+	uci set "network.${peer}.persistent_keepalive=25"
+	uci add_list "network.${peer}.allowed_ips=${interface_ipcidr_prefix}.${peer_IP}/32"
 	printf "Done\n"
 }
 
