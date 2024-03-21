@@ -245,7 +245,7 @@ main() {
 	require_command wg
 
 	self="$(readlink -f "$0")"
-	config_file_default="${self%.sh}.conf"
+	config_file_default="${self%.sh}.env.sh"
 
 	config_file="$1"
 	test -f "${config_file}" || config_file="${config_file_default}"

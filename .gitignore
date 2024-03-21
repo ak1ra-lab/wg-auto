@@ -4,3 +4,6 @@ examples/
 logs/
 
 *.tar
+*.env.sh
+!wg-auto.env.sh
+!wg-vpc.env.sh
