@@ -9,7 +9,7 @@ This script will keep pre-existing peer keys when you re-run this script, if thi
 ## Required Changes
 
 * Update `endpoint` for peers config with your DDNS domain,
-* Update `server_allowed_ips`,
+* Update `peer_allowed_ips`,
     * `AllowedIPs = 0.0.0.0/0` will route all traffic via WireGuard interface on peers,
     * If this is not what you need, update with your local network IP CIDR
 
@@ -18,6 +18,18 @@ This script will keep pre-existing peer keys when you re-run this script, if thi
 * Modify `usernames` with more or less usernames to create any number of peers
 * `path_prefix` is optional, this variable only affects file path for peers config, use your device prefix to meet your need
 * The `create_server_config` and `append_peer_to_server_config` functions are used to create equivalent standard server configurations for other purposes, these function has no effect on OpenWRT setup.
+
+## SNAT with fwmark?
+
+```
+PostUp = iptables -t filter -A FORWARD -i %i -j ACCEPT
+PostUp = iptables -t mangle -A PREROUTING -i %i -j MARK --set-xmark ${fwmark}
+PostUp = iptables -t nat -A POSTROUTING -m mark --mark ${fwmark} -j MASQUERADE
+
+PreDown = iptables -t filter -D FORWARD -i %i -j ACCEPT
+PreDown = iptables -t mangle -D PREROUTING -i %i -j MARK --set-xmark ${fwmark}
+PreDown = iptables -t nat -D POSTROUTING -m mark --mark ${fwmark} -j MASQUERADE
+```
 
 ## Reference
 

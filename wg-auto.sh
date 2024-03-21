@@ -28,13 +28,15 @@ define_variables() {
 	export interface="wg0"
 	export interface_ipcidr_prefix="10.0.20"
 	export server_port="51820"
+	fwmark=$(printf "0x%x" "${server_port}")
+	export fwmark
 	export server_IP="${interface_ipcidr_prefix}.1"
 	export firewall_zone="${interface}_zone"
 	export firewall_rule="${interface}_rule"
 	# `AllowedIPs = 0.0.0.0/0` will route all traffic via WireGuard interface on peers,
 	# If this is not what you need, update with your local network IP CIDR
-	export server_allowed_ips="0.0.0.0/0"
-	# export server_allowed_ips="${interface_ipcidr_prefix}.0/24, 10.255.0.0/24"
+	export peer_allowed_ips="0.0.0.0/0"
+	# export peer_allowed_ips="${interface_ipcidr_prefix}.0/24, 10.255.0.0/24"
 	# The IP address to start from
 	export peer_IP="2"
 	# Use your device prefix to meet your need
@@ -108,27 +110,6 @@ create_interface() {
 	printf "Done\n"
 }
 
-create_server_config() {
-	# Create equivalent standard server configuration
-	printf "Creating server config for '%s'... " "${interface}"
-	fwmark=$(printf "0x%x" "${server_port}")
-	cat <<-EOF >"${config_dir}/${interface}.conf"
-		[Interface]
-		Address = ${server_IP}/24
-		ListenPort = ${server_port}
-		PrivateKey = $(cat "${config_dir}/${interface}.key") # server's private key
-
-		PostUp = iptables -t filter -A FORWARD -i %i -j ACCEPT
-		PostUp = iptables -t mangle -A PREROUTING -i %i -j MARK --set-xmark ${fwmark}
-		PostUp = iptables -t nat -A POSTROUTING -m mark --mark ${fwmark} -j MASQUERADE
-
-		PreDown = iptables -t filter -D FORWARD -i %i -j ACCEPT
-		PreDown = iptables -t mangle -D PREROUTING -i %i -j MARK --set-xmark ${fwmark}
-		PreDown = iptables -t nat -D POSTROUTING -m mark --mark ${fwmark} -j MASQUERADE
-
-	EOF
-	printf "Done\n"
-}
 
 create_firewall_zone() {
 	command -v uci >/dev/null || return
@@ -139,6 +120,8 @@ create_firewall_zone() {
 	uci set "firewall.${firewall_zone}.input=ACCEPT"
 	uci set "firewall.${firewall_zone}.output=ACCEPT"
 	uci set "firewall.${firewall_zone}.forward=ACCEPT"
+	# Specifies whether outgoing zone IPv4 traffic should be masqueraded.
+	# This is typically enabled on the wan zone.
 	uci set "firewall.${firewall_zone}.masq=1"
 	uci add_list "firewall.${firewall_zone}.network=lan"
 	uci add_list "firewall.${firewall_zone}.network=${interface}"
@@ -195,25 +178,28 @@ add_peer_to_server() {
 	uci set "network.${peer}.description=${peer}"
 	uci set "network.${peer}.route_allowed_ips=1"
 	uci set "network.${peer}.persistent_keepalive=25"
+	# You can not add overlapping allowed_ips IP CIDR for multiple peers
 	uci add_list "network.${peer}.allowed_ips=${interface_ipcidr_prefix}.${peer_IP}/32"
 	printf "Done\n"
 }
 
-create_peer_config() {
-	# Create peer configuration
-	printf "Creating config for '%s'... " "${peer}"
-	cat <<-EOF >"${peers_dir}/${peer}/${peer}.conf"
+create_server_config() {
+	# Create equivalent standard server configuration
+	printf "Creating server config for '%s'... " "${interface}"
+	cat <<-EOF >"${config_dir}/${interface}.conf"
 		[Interface]
-		Address = ${interface_ipcidr_prefix}.${peer_IP}/32
-		PrivateKey = $(cat "${peers_dir}/${peer}/${peer}.key") # peer's private key
-		DNS = ${server_IP}
+		Address = ${server_IP}/24
+		ListenPort = ${server_port}
+		PrivateKey = $(cat "${config_dir}/${interface}.key") # server's private key
 
-		[Peer]
-		PublicKey = $(cat "${config_dir}/${interface}.pub") # server's public key
-		PresharedKey = $(cat "${peers_dir}/${peer}/${peer}.psk") # peer's pre-shared key
-		PersistentKeepalive = 25
-		AllowedIPs = ${server_allowed_ips}
-		Endpoint = ${endpoint}:${server_port}
+		PostUp = iptables -t filter -A FORWARD -i %i -j ACCEPT
+		PostUp = iptables -t mangle -A PREROUTING -i %i -j MARK --set-xmark ${fwmark}
+		PostUp = iptables -t nat -A POSTROUTING -m mark --mark ${fwmark} -j MASQUERADE
+
+		PreDown = iptables -t filter -D FORWARD -i %i -j ACCEPT
+		PreDown = iptables -t mangle -D PREROUTING -i %i -j MARK --set-xmark ${fwmark}
+		PreDown = iptables -t nat -D POSTROUTING -m mark --mark ${fwmark} -j MASQUERADE
+
 	EOF
 	printf "Done\n"
 }
@@ -232,12 +218,32 @@ append_peer_to_server_config() {
 	printf "Done\n"
 }
 
+create_peer_config() {
+	# Create peer configuration
+	printf "Creating config for '%s'... " "${peer}"
+	cat <<-EOF >"${peers_dir}/${peer}/${peer}.conf"
+		[Interface]
+		Address = ${interface_ipcidr_prefix}.${peer_IP}/32
+		PrivateKey = $(cat "${peers_dir}/${peer}/${peer}.key") # peer's private key
+		DNS = ${server_IP}
+
+		[Peer]
+		PublicKey = $(cat "${config_dir}/${interface}.pub") # server's public key
+		PresharedKey = $(cat "${peers_dir}/${peer}/${peer}.psk") # peer's pre-shared key
+		PersistentKeepalive = 25
+		AllowedIPs = ${peer_allowed_ips}
+		Endpoint = ${endpoint}:${server_port}
+	EOF
+	printf "Done\n"
+}
+
+
 loop_peers() {
 	for username in ${usernames}; do
 		generate_peer_keys
 		add_peer_to_server
-		create_peer_config
 		append_peer_to_server_config
+		create_peer_config
 
 		peer_IP=$((peer_IP + 1))
 	done
