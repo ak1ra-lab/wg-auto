@@ -21,33 +21,6 @@ splash_screen() {
 	EOF
 }
 
-define_variables() {
-	# Define Variables
-	printf "Defining variables... "
-	export endpoint="my-ddns.example.com"
-	export interface="wg0"
-	export interface_ipcidr_prefix="10.0.20"
-	export server_port="51820"
-	fwmark=$(printf "0x%x" "${server_port}")
-	export fwmark
-	export server_IP="${interface_ipcidr_prefix}.1"
-	export firewall_zone="${interface}_zone"
-	export firewall_rule="${interface}_rule"
-	# `AllowedIPs = 0.0.0.0/0` will route all traffic via WireGuard interface on peers,
-	# If this is not what you need, update with your local network IP CIDR
-	export peer_allowed_ips="0.0.0.0/0"
-	# export peer_allowed_ips="${interface_ipcidr_prefix}.0/24, 10.255.0.0/24"
-	# The IP address to start from
-	export peer_IP="2"
-	# Use your device prefix to meet your need
-	export path_prefix="${interface}"
-	export config_dir="/etc/wireguard/config/${path_prefix}"
-	export peers_dir="${config_dir}/peers"
-	# Modify `usernames` with more or less usernames to create any number of peers
-	export usernames="alpha bravo charlie delta"
-	printf "Done\n"
-}
-
 create_dirs() {
 	# Create directories
 	printf "Creating directories and pre-defining permissions on those directories... "
@@ -109,7 +82,6 @@ create_interface() {
 	uci add_list "network.${interface}.addresses=${server_IP}/24"
 	printf "Done\n"
 }
-
 
 create_firewall_zone() {
 	command -v uci >/dev/null || return
@@ -237,7 +209,6 @@ create_peer_config() {
 	printf "Done\n"
 }
 
-
 loop_peers() {
 	for username in ${usernames}; do
 		generate_peer_keys
@@ -261,7 +232,7 @@ restart_service() {
 	command -v uci >/dev/null || return
 	# Restart WireGuard interface
 	printf "\nRestarting WireGuard interface... "
-	ifup ${interface}
+	ifup "${interface}"
 	printf "Done\n"
 
 	# Restart firewall
@@ -273,10 +244,17 @@ restart_service() {
 main() {
 	require_command wg
 
+	self="$(readlink -f "$0")"
+	config_file_default="${self%.sh}.conf"
+
+	config_file="$1"
+	test -f "${config_file}" || config_file="${config_file_default}"
+	config_file="$(readlink -f "${config_file}")"
+	. "${config_file}"
+
 	umask 077
 	splash_screen
 
-	define_variables
 	create_dirs
 
 	remove_existing_interface
