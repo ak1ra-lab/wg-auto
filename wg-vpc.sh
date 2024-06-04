@@ -101,6 +101,7 @@ create_peer_config() {
 		[Interface]
 		Address = ${interface_ipcidr_prefix}.${peer_IP}/32
 		PrivateKey = $(cat "${peers_dir}/${peer}/${peer}.key") # peer's private key
+		MTU = ${peer_mtu}
 
 		[Peer]
 		PublicKey = $(cat "${config_dir}/${interface}.pub") # server's public key

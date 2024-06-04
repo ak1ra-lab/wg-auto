@@ -8,6 +8,9 @@ server_IP="${interface_ipcidr_prefix}.1"
 peer_IP="2"
 vpc_site_ipcidr="10.255.0.0/24"
 peer_allowed_ips="${interface_ipcidr_prefix}.0/24, ${vpc_site_ipcidr}"
+# https://cloud.google.com/vpc/docs/mtu
+# https://gist.github.com/nitred/f16850ca48c48c79bf422e90ee5b9d95
+peer_mtu=1380
 
 # Modify `usernames` with more or less usernames to create any number of peers
 usernames="alpha bravo charlie delta"
