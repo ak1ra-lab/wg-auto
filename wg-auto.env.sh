@@ -1,3 +1,5 @@
+# shellcheck shell=dash
+
 endpoint="ddns.example.com"
 interface="wg0"
 interface_ipcidr_prefix="10.0.20"
@@ -5,6 +7,7 @@ server_port="51820"
 server_IP="${interface_ipcidr_prefix}.1"
 firewall_zone="${interface}_zone"
 firewall_rule="${interface}_rule"
+firewall_forwarding="${interface}_forwarding"
 fwmark=$(printf "0x%x" "${server_port}")
 
 server_site_ipcidr="10.255.0.0/24"

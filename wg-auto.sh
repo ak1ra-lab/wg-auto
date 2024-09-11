@@ -24,7 +24,7 @@ splash_screen() {
 create_dirs() {
 	# Create directories
 	printf "Creating directories and pre-defining permissions on those directories... "
-	mkdir -p ${peers_dir}
+	mkdir -p "${peers_dir}"
 	printf "Done\n"
 }
 
@@ -48,6 +48,13 @@ remove_firewall_zone() {
 	command -v uci >/dev/null || return
 	printf "Removing pre-existing WireGuard firewall zone... "
 	uci del firewall.${firewall_zone}
+	printf "Done\n"
+}
+
+remove_firewall_forwarding() {
+	command -v uci >/dev/null || return
+	printf "Removing pre-existing WireGuard firewall forwarding... "
+	uci del firewall.${firewall_forwarding}
 	printf "Done\n"
 }
 
@@ -93,14 +100,22 @@ create_firewall_zone() {
 	uci set "firewall.${firewall_zone}.output=ACCEPT"
 	uci set "firewall.${firewall_zone}.forward=ACCEPT"
 	# Specifies whether outgoing zone IPv4 traffic should be masqueraded.
-	# This is typically enabled on the wan zone.
 	uci set "firewall.${firewall_zone}.masq=1"
-	uci add_list "firewall.${firewall_zone}.network=lan"
 	uci add_list "firewall.${firewall_zone}.network=${interface}"
 	printf "Done\n"
 }
 
-add_firewall_rule() {
+create_firewall_forwarding() {
+	command -v uci >/dev/null || return
+	# Create firewall forwarding
+	printf "Create firewall forwarding from '%s' zone to 'lan' zone... " "${firewall_zone}"
+	uci set "firewall.${firewall_forwarding}=forwarding"
+	uci set "firewall.${firewall_forwarding}.src=${firewall_zone}"
+	uci set "firewall.${firewall_forwarding}.dest=lan"
+	printf "Done\n"
+}
+
+create_firewall_rule() {
 	command -v uci >/dev/null || return
 	# Add firewall rule
 	printf "Adding firewall rule for '%s' interface... " "${interface}"
@@ -250,6 +265,7 @@ main() {
 	config_file="$1"
 	test -f "${config_file}" || config_file="${config_file_default}"
 	config_file="$(readlink -f "${config_file}")"
+	# shellcheck disable=SC1090
 	. "${config_file}"
 
 	umask 077
@@ -260,12 +276,14 @@ main() {
 	remove_existing_interface
 	remove_existing_peers
 	remove_firewall_zone
+	remove_firewall_forwarding
 	remove_firewall_rule
 
 	generate_server_keys
 	create_interface
 	create_firewall_zone
-	add_firewall_rule
+	create_firewall_forwarding
+	create_firewall_rule
 	create_server_config
 
 	loop_peers
