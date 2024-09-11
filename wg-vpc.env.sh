@@ -1,3 +1,5 @@
+# shellcheck shell=dash
+
 endpoint="ddns.example.com"
 interface="wg1"
 interface_ipcidr_prefix="10.0.20"
@@ -15,10 +17,11 @@ peer_mtu=1380
 # Modify `usernames` with more or less usernames to create any number of peers
 usernames="alpha bravo charlie delta"
 # eval "peer_site_ipcidr=\${${username}_site_ipcidr}"
-alpha_site_ipcidr="10.255.2.0/24"
-bravo_site_ipcidr="10.255.3.0/24"
-charlie_site_ipcidr="10.255.4.0/24"
-delta_site_ipcidr="10.255.5.0/24"
+# https://www.shellcheck.net/wiki/SC2034
+export alpha_site_ipcidr="10.255.2.0/24"
+export bravo_site_ipcidr="10.255.3.0/24"
+export charlie_site_ipcidr="10.255.4.0/24"
+export delta_site_ipcidr="10.255.5.0/24"
 
 # Use your device prefix to meet your need
 path_prefix="${interface}"

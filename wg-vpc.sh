@@ -22,7 +22,7 @@ splash_screen() {
 create_dirs() {
 	# Create directories
 	printf "Creating directories and pre-defining permissions on those directories... "
-	mkdir -p ${peers_dir}
+	mkdir -p "${peers_dir}"
 	printf "Done\n"
 }
 
@@ -132,6 +132,7 @@ main() {
 	config_file="$1"
 	test -f "${config_file}" || config_file="${config_file_default}"
 	config_file="$(readlink -f "${config_file}")"
+	# shellcheck disable=SC1090
 	. "${config_file}"
 
 	umask 077
