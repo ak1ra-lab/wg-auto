@@ -1,5 +1,4 @@
 # shellcheck shell=dash
-
 endpoint="ddns.example.com"
 interface="wg0"
 interface_ipcidr_prefix="10.0.20"

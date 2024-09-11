@@ -1,5 +1,5 @@
 #!/bin/ash
-# shellcheck shell=dash
+# shellcheck shell=dash source=wg-auto.env.sh
 # https://openwrt.org/docs/guide-user/services/vpn/wireguard/automated
 
 require_command() {
@@ -265,7 +265,6 @@ main() {
 	config_file="$1"
 	test -f "${config_file}" || config_file="${config_file_default}"
 	config_file="$(readlink -f "${config_file}")"
-	# shellcheck disable=SC1090
 	. "${config_file}"
 
 	umask 077

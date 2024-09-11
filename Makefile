@@ -11,11 +11,10 @@ shfmt:  ## reformat shell scripts
 	shfmt -p -i 0 -ci -w *.sh
 .PHONY: shfmt
 
+SHELLCHECK := shellcheck --external-sources --shell=dash
 shellcheck:  ## run shellcheck on shell scripts
-	@echo "shellcheck on wg-auto.sh"
-	@cat wg-auto.env.sh wg-auto.sh | shellcheck --shell=dash -
-	@echo "shellcheck on wg-vpc.sh"
-	@cat wg-vpc.env.sh wg-vpc.sh | shellcheck --shell=dash -
+	$(SHELLCHECK) wg-auto.sh
+	$(SHELLCHECK) wg-vpc.sh
 .PHONY: shellcheck
 
 clean:  ## clean up
