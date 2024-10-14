@@ -108,10 +108,10 @@ create_firewall_zone() {
 create_firewall_forwarding() {
 	command -v uci >/dev/null || return
 	# Create firewall forwarding
-	printf "Create firewall forwarding from '%s' zone to 'lan' zone... " "${firewall_zone}"
+	printf "Create firewall forwarding from '%s' zone to '%s' zone... " "${firewall_zone}" "${firewall_zone_lan}"
 	uci set "firewall.${firewall_forwarding}=forwarding"
 	uci set "firewall.${firewall_forwarding}.src=${firewall_zone}"
-	uci set "firewall.${firewall_forwarding}.dest=lan"
+	uci set "firewall.${firewall_forwarding}.dest=${firewall_zone_lan}"
 	printf "Done\n"
 }
 
@@ -121,7 +121,7 @@ create_firewall_rule() {
 	printf "Adding firewall rule for '%s' interface... " "${interface}"
 	uci set "firewall.${firewall_rule}=rule"
 	uci set "firewall.${firewall_rule}.name=${firewall_rule}"
-	uci set "firewall.${firewall_rule}.src=wan"
+	uci set "firewall.${firewall_rule}.src=${firewall_zone_wan}"
 	uci set "firewall.${firewall_rule}.dest_port=${server_port}"
 	uci set "firewall.${firewall_rule}.proto=udp"
 	uci set "firewall.${firewall_rule}.target=ACCEPT"
@@ -274,9 +274,9 @@ main() {
 
 	remove_existing_interface
 	remove_existing_peers
-	remove_firewall_zone
-	remove_firewall_forwarding
 	remove_firewall_rule
+	remove_firewall_forwarding
+	remove_firewall_zone
 
 	generate_server_keys
 	create_interface
