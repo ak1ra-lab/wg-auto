@@ -15,7 +15,7 @@ peer_IP="2"
 peer_mtu=1380
 
 # Modify `usernames` with more or less usernames to create any number of peers
-#! Caution: Linux interface name should no longer than 16 chars
+#! Linux interface name should no longer than 15 characters
 usernames="alpha bravo charl delta"
 # eval "peer_site_ipcidr=\${${username}_site_ipcidr}"
 # https://www.shellcheck.net/wiki/SC2034

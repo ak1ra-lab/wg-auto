@@ -21,7 +21,7 @@ peer_allowed_ips="${interface_ipcidr_prefix}.0/24, ${server_site_ipcidr}"
 peer_IP="2"
 
 # Modify `usernames` with more or less usernames to create any number of peers
-#! Caution: Linux interface name should no longer than 16 chars
+#! Linux interface name should no longer than 15 characters
 usernames="alpha bravo charl delta"
 
 # Use your device prefix to meet your need

@@ -18,16 +18,17 @@ Use `wg-vpc.env.sh` as a starting point to make your changes, run with `sh wg-vp
 
 ## Required Changes
 
-* Update `endpoint` for peers config with your DDNS domain or fixed endpoint,
-* Update `server_site_ipcidr` with your server/home network IP CIDR,
-    * If you want to route all traffic with WireGuard, modify `peer_allowed_ips=0.0.0.0/0` in `wg-auto.env.sh`, then uncomment the `DNS = ${server_IP}` in `create_peer_config` function.
+- Update `endpoint` for peers config with your DDNS domain or fixed endpoint,
+- Update `server_site_ipcidr` with your server/home network IP CIDR,
+  - If you want to route all traffic with WireGuard, modify `peer_allowed_ips=0.0.0.0/0` in `wg-auto.env.sh`, then uncomment the `DNS = ${server_IP}` in `create_peer_config` function.
 
 ## Optional Changes
 
-* Modify `usernames` with more or less usernames to create any number of peers
-* `path_prefix` is optional, this variable only affects file path for peers config, use your device prefix to meet your need
-* The `create_server_config` and `append_peer_to_server_config` functions are used to create equivalent standard server configurations for other purposes, these function does not affect OpenWRT setup.
+- Modify `usernames` with more or less usernames to create any number of peers
+  - Linux interface name should no longer than 15 characters
+- `path_prefix` is optional, this variable only affects file path for peers config, use your device prefix to meet your need
+- The `create_server_config` and `append_peer_to_server_config` functions are used to create equivalent standard server configurations for other purposes, these function does not affect OpenWRT setup.
 
 ## Reference
 
-* [[OpenWrt Wiki] WireGuard multi-client server automated](https://openwrt.org/docs/guide-user/services/vpn/wireguard/automated)
+- [[OpenWrt Wiki] WireGuard multi-client server automated](https://openwrt.org/docs/guide-user/services/vpn/wireguard/automated)
