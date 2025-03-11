@@ -74,6 +74,9 @@ create_server_config() {
 		ListenPort = ${server_port}
 		PrivateKey = $(cat "${config_dir}/${interface}.key") # server's private key
 
+		PostUp = iptables -t mangle -A FORWARD -i %i -p tcp --tcp-flags SYN,RST SYN -m comment --comment "%i" -j TCPMSS --clamp-mss-to-pmtu
+		PostDown = iptables -t mangle -D FORWARD -i %i -p tcp --tcp-flags SYN,RST SYN -m comment --comment "%i" -j TCPMSS --clamp-mss-to-pmtu
+
 	EOF
 	printf "Done\n"
 }
