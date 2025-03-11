@@ -179,13 +179,13 @@ create_server_config() {
 		ListenPort = ${server_port}
 		PrivateKey = $(cat "${config_dir}/${interface}.key") # server's private key
 
-		PostUp = iptables -t filter -A FORWARD -i %i -j ACCEPT
-		PostUp = iptables -t mangle -A PREROUTING -i %i -j MARK --set-xmark ${fwmark}
-		PostUp = iptables -t nat -A POSTROUTING -m mark --mark ${fwmark} -j MASQUERADE
+		PostUp = iptables -t filter -A FORWARD -i %i -m comment --comment "%i" -j ACCEPT
+		PostUp = iptables -t mangle -A PREROUTING -i %i -m comment --comment "%i" -j MARK --set-xmark ${fwmark}
+		PostUp = iptables -t nat -A POSTROUTING -m mark --mark ${fwmark} -m comment --comment "%i" -j MASQUERADE
 
-		PreDown = iptables -t filter -D FORWARD -i %i -j ACCEPT
-		PreDown = iptables -t mangle -D PREROUTING -i %i -j MARK --set-xmark ${fwmark}
-		PreDown = iptables -t nat -D POSTROUTING -m mark --mark ${fwmark} -j MASQUERADE
+		PreDown = iptables -t filter -D FORWARD -i %i -m comment --comment "%i" -j ACCEPT
+		PreDown = iptables -t mangle -D PREROUTING -i %i -m comment --comment "%i" -j MARK --set-xmark ${fwmark}
+		PreDown = iptables -t nat -D POSTROUTING -m mark --mark ${fwmark} -m comment --comment "%i" -j MASQUERADE
 
 	EOF
 	printf "Done\n"
