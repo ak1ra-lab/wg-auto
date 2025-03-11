@@ -83,8 +83,9 @@ persist_ipset() {
 persist_iptables() {
     # iptables-persistent
     # /usr/share/netfilter-persistent/plugins.d/15-ip4tables
+    # 还会遗漏一些 dockerd 创建的 MASQUERADE 规则, 但是又不能一股脑直接忽略, 还是保守些算了, 手动编辑下
     echo "Persistent iptables rules..."
-    iptables-save | grep -vE 'wg[0-9]+' >/etc/iptables/rules.v4
+    iptables-save | grep -vE 'wg[0-9]+|DOCKER|docker0|br-[0-9a-f]+' >/etc/iptables/rules.v4
 }
 
 persist_netplan_routes() {
