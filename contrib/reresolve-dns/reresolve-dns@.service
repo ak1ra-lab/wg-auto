@@ -1,0 +1,14 @@
+[Unit]
+Description=wireguard-tools reresolve-dns.sh for %I
+After=network-online.target nss-lookup.target
+Wants=network-online.target nss-lookup.target
+Documentation=https://git.zx2c4.com/wireguard-tools/tree/contrib/reresolve-dns
+Documentation=https://github.com/WireGuard/wireguard-tools/tree/master/contrib/reresolve-dns
+
+[Service]
+Type=oneshot
+WorkingDirectory=/etc/wireguard
+ExecStart=/usr/share/doc/wireguard-tools/examples/reresolve-dns/reresolve-dns.sh %I
+
+[Install]
+WantedBy=multi-user.target

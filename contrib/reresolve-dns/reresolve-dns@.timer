@@ -1,0 +1,11 @@
+[Unit]
+Description=wireguard-tools reresolve-dns.sh for %I
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=30s
+Persistent=true
+AccuracySec=1s
+
+[Install]
+WantedBy=timers.target
